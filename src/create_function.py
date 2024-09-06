@@ -4,7 +4,9 @@ Module to create a new AWS Lambda function from ECR image
 
 import os
 import boto3
-from dotenv import load_dotenv
+import random
+import string
+from dotenv import load_dotenv, set_key
 
 def main():
     load_dotenv()
@@ -24,6 +26,12 @@ def main():
         region_name=os.getenv("AWS_REGION"),
     )
 
+    try:
+        lambda_client.delete_function(FunctionName=function_name)
+        print("Existing Function was Deleted!")
+    except lambda_client.exceptions.ResourceNotFoundException:
+        pass
+
     response = lambda_client.create_function(
         FunctionName=function_name,
         PackageType="Image",
@@ -42,9 +50,19 @@ def main():
         MemorySize=128,  # Optional: function memory size in megabytes
     )
 
-    print("Lambda function created successfully:")
+    id_num = "".join(random.choices(string.digits, k=7))
+
+    api_gateway_permissions = lambda_client.add_permission(
+        FunctionName=function_name,
+        StatementId="api-gateway-permission-statement-" + id_num,
+        Action="lambda:InvokeFunction",
+        Principal="apigateway.amazonaws.com",
+    )
+
+    print("Lambda Function Created Successfully!")
     print(f"Function Name: {response['FunctionName']}")
     print(f"Function ARN: {response['FunctionArn']}")
+    set_key(".env", "\nFUNCTION_ARN", response["FunctionArn"])
 
 if __name__ == "__main__":
     main()
