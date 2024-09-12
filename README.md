@@ -1,6 +1,6 @@
-# aps03
+# Machine Learning on AWS
 
-Welcome to this ML project!
+Welcome to this ML + AWS project!
 
 ## Installing Dependencies
 
