@@ -2,6 +2,10 @@
 
 Welcome to this ML + AWS project!
 
+This project integrates Machine Learning (ML) with AWS services to deploy a model as a Lambda function using Docker containers. The project automates the creation of AWS resources such as an Elastic Container Registry (ECR) repository, Lambda functions, and an API Gateway. The ML model is trained, stored in an S3 bucket, and predictions are made using an API endpoint exposed through the Lambda function.
+
+The project structure is modular, including source code, models and unit tests to ensure stability. It utilizes the AWS CLI for configuration management and Docker for local testing and deployment.
+
 ## Installing Dependencies
 
 To install the project dependencies, use the `requirements.txt` file:
@@ -12,10 +16,8 @@ pip install -r requirements.txt
 
 ## Project Structure
 
-- `data`: Contains the data used by the model.
 - `models`: Contains the machine learning models and encoders.
-- `notebooks`: Contains the notebooks used for data exploration and visualization.
-- `src`: Contains the main source code to collect and process data, train models and make predictions.
+- `src`: Contains the main source code to deploy the function and API on the AWS.
 - `tests`: Contains unit and integration tests to guarantee code stability.
 
 ## Usage
