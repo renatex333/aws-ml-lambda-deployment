@@ -54,10 +54,6 @@ docker build --platform linux/amd64 -t lambda-predict-image:test .
 ```
 
 Testing Container Application locally:
-> [!IMPORTANT]  
-> To test locally, the following Environment Variables must be exported to the Docker container:
-> - BUCKET_NAME, MODEL_PATH and ENCODER_PATH, to load model and encoder stored in S3 Bucket;
-> - AWS_S3_ACCESS_KEY_ID and AWS_S3_SECRET_ACCESS_KEY.
 ```bash
 docker run -p 9500:8080 lambda-predict-image:test
 curl "http://localhost:9500/2015-03-31/functions/function/invocations" -d "{}"
@@ -100,7 +96,7 @@ docker push REPOSITORY_URI:latest
 To create a Lambda function from the ECR image, run:
 
 ```bash
-python src/create_function.py
+python3 src/create_function.py
 ```
 
 ### Create API Gateway
@@ -108,17 +104,31 @@ python src/create_function.py
 To create an API Gateway that exposes the Lambda function, run:
 
 ```bash
-python src/create_api.py
+python3 src/create_api.py
 ```
 
-### Test
+#### Local Testing
 
-To test the deployed instances, run the following command:
+To test the function locally, use:
 
 ```bash
-python tests/test.py
+pytest
 ```
+
+#### Remote Testing
+
+After deploying the Lambda function and API Gateway, you can verify the setup by running:
+
+```bash
+pytest --local
+```
+
+The `--local` flag ensures that tests requiring local resources, such as environment variables, are executed.
 
 # References
 
-[Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+- [AWS Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+- [AWS Lambda Documentation](https://docs.aws.amazon.com/lambda/)
+- [AWS Lambda Layers Documentation](https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html)
+- [API Gateway Documentation](https://docs.aws.amazon.com/apigateway/)
+- [Pytest Documentation](https://docs.pytest.org/en/stable/)
