@@ -1,33 +1,18 @@
 import os
 import json
-import boto3
 import pickle
 import pandas as pd
 
-S3 = boto3.client(
-        "s3",
-        aws_access_key_id=os.getenv("AWS_S3_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_S3_SECRET_ACCESS_KEY"),
-    )
-
-def loader(object_path: str):
-    """
-    Load the object from S3 Bucket
-    """
-    bucket_name = os.getenv("BUCKET_NAME")
-    key = os.getenv(object_path)
-
-    # Make sure bucket_name and key are valid
-    if not isinstance(bucket_name, str) or not isinstance(key, str):
-        raise ValueError("Bucket name or key is not a string")
-
-    obj = S3.get_object(
-        Bucket=bucket_name,
-        Key=key,
-    )
-    file_content = obj["Body"].read()
-    file = pickle.loads(file_content)
-    return file
+def loader(object_name: str):
+    if not isinstance(object_name, str):
+        raise ValueError("Object path is not a string")
+    models_folder = os.path.relpath("models", os.getcwd())
+    object_path = f"{models_folder}/{object_name}.pkl"
+    try:
+        with open(object_path, "rb") as file:
+            return pickle.load(file)
+    except FileNotFoundError:
+        raise FileNotFoundError("Invalid object name.")
 
 def predict(event, context):
     """
@@ -37,20 +22,46 @@ def predict(event, context):
         return {
             "created_by": "Renatex",
             "message": "No body in the request",
+            "error": "None",
             "prediction": "None"
         }
-    # Load data
-    body = json.loads(event["body"])
-    # Load the model and encoder from S3
-    model = loader("MODEL_PATH")
-    encoder = loader("ENCODER_PATH")
-    # Make predictions
-    df_person = pd.DataFrame([body])
-    person_t = encoder.transform(df_person)
-    pred = model.predict(person_t)[0]
+
+    try:
+        body = json.loads(event["body"])
+    except Exception as e:
+        return {
+            "created_by": "Renatex",
+            "message": "Invalid body in the request",
+            "error": f"{type(e).__name__}: {str(e)}",
+            "prediction": "None"
+        }
     
+    try:
+        model = loader("model")
+        encoder = loader("encoder")
+    except Exception as e:
+        return {
+            "created_by": "Renatex",
+            "message": f"Error loading the model",
+            "error": f"{type(e).__name__}: {str(e)}",
+            "prediction": "None"
+        }
+
+    try:
+        df_person = pd.DataFrame([body])
+        person_t = encoder.transform(df_person)
+        pred = model.predict(person_t)[0]
+    except Exception as e:
+        return {
+            "created_by": "Renatex",
+            "message": f"Invalid body in the request",
+            "error": f"{type(e).__name__}: {str(e)}",
+            "prediction": "None"
+        }
+
     return {
         "created_by": "Renatex",
         "message": "Prediction made successfully",
+        "error": "None",
         "prediction": str(pred)
     }
