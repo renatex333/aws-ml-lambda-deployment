@@ -6,7 +6,7 @@ import os
 import boto3
 import random
 import string
-from dotenv import load_dotenv, set_key
+from dotenv import load_dotenv, set_key, unset_key
 
 def main():
     load_dotenv()
@@ -29,23 +29,15 @@ def main():
     try:
         lambda_client.delete_function(FunctionName=function_name)
         print("Existing Function was Deleted!")
+        unset_key(".env", "FUNCTION_ARN")
     except lambda_client.exceptions.ResourceNotFoundException:
-        pass
+        print("Function does not exist.")
 
     response = lambda_client.create_function(
         FunctionName=function_name,
         PackageType="Image",
         Code={"ImageUri": image_uri},
         Role=lambda_role_arn,
-        Environment={
-            "Variables": {
-                "BUCKET_NAME": os.getenv("AWS_BUCKET_NAME"),
-                "MODEL_PATH": os.getenv("MODEL_PATH"),
-                "ENCODER_PATH": os.getenv("ENCODER_PATH"),
-                "AWS_S3_ACCESS_KEY_ID": os.getenv("AWS_S3_ACCESS_KEY_ID"),
-                "AWS_S3_SECRET_ACCESS_KEY": os.getenv("AWS_S3_SECRET_ACCESS_KEY"),
-            }
-        },
         Timeout=30,  # Optional: function timeout in seconds
         MemorySize=128,  # Optional: function memory size in megabytes
     )
@@ -59,10 +51,10 @@ def main():
         Principal="apigateway.amazonaws.com",
     )
 
-    print("Lambda Function Created Successfully!")
-    print(f"Function Name: {response['FunctionName']}")
-    print(f"Function ARN: {response['FunctionArn']}")
-    set_key(".env", "\nFUNCTION_ARN", response["FunctionArn"])
+    function_arn = response["FunctionArn"]
+    print(f"Lambda Function {function_name} Created Successfully!")
+    print(f"Function ARN: {function_arn}")
+    set_key(".env", "\nFUNCTION_ARN", function_arn)
 
 if __name__ == "__main__":
     main()

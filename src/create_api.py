@@ -1,6 +1,7 @@
 import os
 import boto3
-from dotenv import load_dotenv, set_key
+import botocore
+from dotenv import load_dotenv, set_key, unset_key
 
 def main():
     load_dotenv()
@@ -14,17 +15,18 @@ def main():
         region_name=os.getenv("AWS_REGION"),
     )
 
-    api_gateway_id = os.getenv("API_GATEWAY_ID")
-    if api_gateway_id:
-        try:
-            api_gateway_client.delete_api(ApiId=api_gateway_id)
-            print("API Gateway Deleted!")
-        except api_gateway_client.exceptions.NotFoundException as e:
-            print("Error deleting API Gateway:", e)
+    try:
+        api_gateway_id = os.getenv("API_GATEWAY_ID")
+        api_gateway_client.delete_api(ApiId=api_gateway_id)
+        print("API Gateway Deleted!")
+        unset_key(".env", "API_GATEWAY_ID")
+        unset_key(".env", "API_GATEWAY_URL")
+    except (api_gateway_client.exceptions.NotFoundException, botocore.exceptions.ParamValidationError):
+        print(f"No existing API Gateway found with ID '{api_gateway_id}'.")
 
     lambda_function_arn = os.getenv("FUNCTION_ARN")
     api_route = "/predict"
-    api_gateway_create = api_gateway_client.create_api(
+    response = api_gateway_client.create_api(
         Name=api_gateway_name,
         ProtocolType="HTTP",
         Version="1.0",
@@ -32,9 +34,11 @@ def main():
         Target=lambda_function_arn,
     )
 
-    print("API Endpoint:", api_gateway_create["ApiEndpoint"] + api_route)
-    set_key(".env", "\nAPI_GATEWAY_ID", api_gateway_create["ApiId"])
-    set_key(".env", "\nAPI_GATEWAY_URL", api_gateway_create["ApiEndpoint"] + api_route)
+    api_id = response["ApiId"]
+    api_endpoint = response["ApiEndpoint"] + api_route
+    print("API Endpoint:", api_endpoint)
+    set_key(".env", "\nAPI_GATEWAY_ID", api_id)
+    set_key(".env", "\nAPI_GATEWAY_URL", api_endpoint)
 
 if __name__ == "__main__":
     main()
