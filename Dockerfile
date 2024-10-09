@@ -6,6 +6,9 @@ COPY requirements.txt ${LAMBDA_TASK_ROOT}
 # Copy function code
 COPY src/lambda_function.py ${LAMBDA_TASK_ROOT}
 
+# Copy model and encoder
+COPY models/ ${LAMBDA_TASK_ROOT}/models/
+
 # Install system dependencies
 RUN yum install -y libstdc++ cmake gcc-c++ && \
     yum clean all && \
