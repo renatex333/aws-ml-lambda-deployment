@@ -43,7 +43,7 @@ set AWS_PROFILE=mlops
 
 Windows PowerShell:
 ```bash
-env:AWS_PROFILE = "mlops"
+$env:AWS_PROFILE = "mlops"
 ```
 
 ### Create and Configure ECR repository
